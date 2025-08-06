@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { RangersService } from './rangers.service';
 import { CreateRangerDto } from './dto/create-ranger.dto';
 import { UpdateRangerDto } from './dto/update-ranger.dto';
+import { ParseMongoIdPipe } from './common/pipes/parse-mongo-id/parse-mongo-id.pipe';
 
 @Controller('rangers')
 export class RangersController {
@@ -22,13 +23,13 @@ export class RangersController {
     return this.rangersService.findOne(term);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRangerDto: UpdateRangerDto) {
-    return this.rangersService.update(+id, updateRangerDto);
+  @Patch(':term')
+  update(@Param('term') term: string, @Body() updateRangerDto: UpdateRangerDto) {
+    return this.rangersService.update(term, updateRangerDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.rangersService.remove(+id);
+  remove(@Param('id',ParseMongoIdPipe) id: string) {
+    return this.rangersService.remove(id);
   }
 }

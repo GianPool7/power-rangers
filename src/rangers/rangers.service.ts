@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateRangerDto } from './dto/create-ranger.dto';
 import { UpdateRangerDto } from './dto/update-ranger.dto';
 import { InjectModel } from '@nestjs/mongoose';
@@ -21,7 +21,7 @@ export class RangersService {
       const ranger=await this.rangerModel.create(createRangerDto)
       return ranger;
     } catch (error) {
-      console.log("un error : ",error);
+      this.handleExceptions(error)
     }
 
   }
@@ -32,7 +32,7 @@ export class RangersService {
       const rangers=await this.rangerModel.find().exec()
       return rangers
     } catch (error) {
-      console.log("jejejejje");
+      this.handleExceptions(error)
     }
   }
 
@@ -60,11 +60,37 @@ export class RangersService {
     // return `This action returns a #${id} ranger`;
   }
 
-  update(id: number, updateRangerDto: UpdateRangerDto) {
-    return `This action updates a #${id} ranger`;
+  async update(term: string, updateRangerDto: UpdateRangerDto) {
+    // return `This action updates a #${id} ranger`;
+    const ranger=await this.findOne(term);
+    if (updateRangerDto.color) {
+      updateRangerDto.color=updateRangerDto.color.toLocaleLowerCase();
+    }
+
+    try {
+      await ranger.updateOne(updateRangerDto)
+      return {...ranger.toJSON(),...updateRangerDto}
+    } catch (error) {
+      this.handleExceptions(error)
+    }
+
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} ranger`;
+  async remove(id: string) {
+    // return `This action removes a #${id} ranger`;
+    const {deletedCount,acknowledged}=await this.rangerModel.deleteOne({_id:id})
+    if (deletedCount===0) {
+      throw new BadRequestException(`Ranger with id "${id} not found"`)
+    }
+    return;
   }
+
+  private handleExceptions(error:any){
+    if (error.code===11000) {
+      throw new BadRequestException(`Ranger with id "${JSON.stringify} not found"`)
+    }
+    console.log(error);
+    throw new InternalServerErrorException(`can't create ranger - check server logs`)
+  }
+
 }
